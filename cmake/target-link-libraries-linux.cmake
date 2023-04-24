@@ -1,5 +1,5 @@
 target_link_libraries(
-     ShadowMapping
+     ParallelSplitShadowMapping
         glad
         glfw3
         pthread

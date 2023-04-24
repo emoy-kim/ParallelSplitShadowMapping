@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.8)
 
-project("ShadowMapping")
+project("ParallelSplitShadowMapping")
 
 include(cmake/check-compiler.cmake)
 
@@ -19,18 +19,10 @@ set(
 configure_file(include/ProjectPath.h.in ${PROJECT_BINARY_DIR}/ProjectPath.h @ONLY)
 
 include_directories("include")
-if(MSVC)
-   include(cmake/add-libraries-windows.cmake)
-else()
-   include(cmake/add-libraries-linux.cmake)
-endif()
+include(cmake/add-libraries-linux.cmake)
 
-add_executable(ShadowMapping ${SOURCE_FILES})
+add_executable(ParallelSplitShadowMapping ${SOURCE_FILES})
 
-if(MSVC)
-   include(cmake/target-link-libraries-windows.cmake)
-else()
-   include(cmake/target-link-libraries-linux.cmake)
-endif()
+include(cmake/target-link-libraries-linux.cmake)
 
-target_include_directories(ShadowMapping PUBLIC ${CMAKE_BINARY_DIR})
+target_include_directories(ParallelSplitShadowMapping PUBLIC ${CMAKE_BINARY_DIR})
