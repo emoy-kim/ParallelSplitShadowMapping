@@ -1,6 +1,6 @@
 #pragma once
 
-#include "_Common.h"
+#include "base.h"
 
 class CameraGL
 {
@@ -10,17 +10,18 @@ public:
       const glm::vec3& cam_position,
       const glm::vec3& view_reference_position,
       const glm::vec3& view_up_vector,
-      float fov = 30.0f,
-      float near_plane = 0.1f,
-      float far_plane = 10000.0f
+      float fov = 60.0f,
+      float near_plane = 1.0f,
+      float far_plane = 1000.0f
    );
 
-   [[nodiscard]] int getWidth() const { return Width; }
-   [[nodiscard]] int getHeight() const { return Height; }
    [[nodiscard]] bool getMovingState() const { return IsMoving; }
+   [[nodiscard]] float getNearPlane() const { return NearPlane; }
+   [[nodiscard]] float getFarPlane() const { return FarPlane; }
    [[nodiscard]] glm::vec3 getCameraPosition() const { return CamPos; }
    [[nodiscard]] const glm::mat4& getViewMatrix() const { return ViewMatrix; }
    [[nodiscard]] const glm::mat4& getProjectionMatrix() const { return ProjectionMatrix; }
+   [[nodiscard]] float linearizeDepthValue(float depth) const;
    void setMovingState(bool is_moving) { IsMoving = is_moving; }
    void updateCamera();
    void pitch(int angle);
@@ -35,7 +36,8 @@ public:
    void zoomIn();
    void zoomOut();
    void resetCamera();
-   void updateWindowSize(int width, int height);
+   void updateOrthographicCamera(int width, int height);
+   void updatePerspectiveCamera(int width, int height);
    void updateCameraPosition(
       const glm::vec3& cam_position,
       const glm::vec3& view_reference_position,
@@ -43,6 +45,7 @@ public:
    );
 
 private:
+   bool IsPerspective;
    bool IsMoving;
    int Width;
    int Height;

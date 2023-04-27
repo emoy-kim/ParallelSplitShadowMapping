@@ -69,7 +69,7 @@ float getSpotlightFactor(in vec3 normalized_light_vector, in int light_index)
 
    vec4 direction_in_ec = 
       transpose( inverse( ViewMatrix * WorldMatrix ) ) * 
-      vec4(Lights[light_index].SpotlightDirection, 1.0f);
+      vec4(Lights[light_index].SpotlightDirection, one);
    vec3 normalized_direction = normalize( direction_in_ec.xyz );
    float cutoff_angle = clamp( Lights[light_index].SpotlightCutoffAngle, zero, 90.0f );
    float factor = dot( -normalized_light_vector, normalized_direction );
@@ -83,7 +83,7 @@ float getShadowFactor()
        zero < depth_map_coord.w) {
       return textureProj( DepthMap, depth_map_coord );
    }
-   return 1.0f;
+   return one;
 }
 
 vec4 calculateLightingEquation()
@@ -127,8 +127,6 @@ void main()
    if (UseTexture == 0) final_color = vec4(one);
    else final_color = texture( BaseTexture, tex_coord );
 
-   if (UseLight != 0) {
-      final_color *= calculateLightingEquation();
-   }
+   if (UseLight != 0) final_color *= calculateLightingEquation();
    else final_color *= Material.DiffuseColor;
 }

@@ -1,5 +1,5 @@
 /*
- * Author: Emoy Kim
+ * Author: Jeesun Kim
  * E-mail: emoy.kim_AT_gmail.com
  * 
  * This code is a free software; it can be freely used, changed and redistributed.
@@ -9,21 +9,20 @@
 
 #pragma once
 
-#include "_Common.h"
-#include "Light.h"
-#include "Object.h"
+#include "base.h"
+#include "light.h"
+#include "object.h"
 
 class RendererGL
 {
 public:
+   RendererGL();
+   ~RendererGL();
+
    RendererGL(const RendererGL&) = delete;
    RendererGL(const RendererGL&&) = delete;
    RendererGL& operator=(const RendererGL&) = delete;
    RendererGL& operator=(const RendererGL&&) = delete;
-
-
-   RendererGL();
-   ~RendererGL();
 
    void play();
 
@@ -32,6 +31,8 @@ private:
    GLFWwindow* Window;
    int FrameWidth;
    int FrameHeight;
+   int ShadowMapSize;
+   int SplitNum;
    GLuint FBO;
    GLuint DepthTextureID;
    glm::ivec2 ClickedPoint;
@@ -44,20 +45,19 @@ private:
    std::unique_ptr<ObjectGL> TigerObject;
    std::unique_ptr<ObjectGL> PandaObject;
    std::unique_ptr<LightGL> Lights;
- 
+
    void registerCallbacks() const;
    void initialize();
+   void writeDepthTexture(const std::string& name);
 
    static void printOpenGLInformation();
 
-   void error(int error, const char* description) const;
    void cleanup(GLFWwindow* window);
    void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods);
    void cursor(GLFWwindow* window, double xpos, double ypos);
    void mouse(GLFWwindow* window, int button, int action, int mods);
    void mousewheel(GLFWwindow* window, double xoffset, double yoffset) const;
    void reshape(GLFWwindow* window, int width, int height) const;
-   static void errorWrapper(int error, const char* description);
    static void cleanupWrapper(GLFWwindow* window);
    static void keyboardWrapper(GLFWwindow* window, int key, int scancode, int action, int mods);
    static void cursorWrapper(GLFWwindow* window, double xpos, double ypos);

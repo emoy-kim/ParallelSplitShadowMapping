@@ -9,14 +9,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(
 	SOURCE_FILES 
 		main.cpp
-		source/Light.cpp
-		source/Camera.cpp
-		source/Object.cpp
-		source/Shader.cpp
-		source/Renderer.cpp
+		source/light.cpp
+		source/camera.cpp
+		source/object.cpp
+		source/shader.cpp
+		source/renderer.cpp
 )
 
-configure_file(include/ProjectPath.h.in ${PROJECT_BINARY_DIR}/ProjectPath.h @ONLY)
+configure_file(include/project_constants.h.in ${PROJECT_BINARY_DIR}/project_constants.h @ONLY)
 
 include_directories("include")
 include(cmake/add-libraries-linux.cmake)

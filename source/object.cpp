@@ -1,4 +1,4 @@
-#include "Object.h"
+#include "object.h"
 
 ObjectGL::ObjectGL() :
    ImageBuffer( nullptr ), VAO( 0 ), VBO( 0 ), DrawMode( 0 ), VerticesCount( 0 ),
@@ -299,10 +299,10 @@ void ObjectGL::setObject(
 
 bool ObjectGL::readObjectFile(
    std::vector<glm::vec3>& vertices,
-   std::vector<glm::vec3>& normals, 
-   std::vector<glm::vec2>& textures, 
+   std::vector<glm::vec3>& normals,
+   std::vector<glm::vec2>& textures,
    const std::string& file_path
-) const
+)
 {
    std::ifstream file(file_path);
    if (!file.is_open()) {
@@ -316,7 +316,7 @@ bool ObjectGL::readObjectFile(
    while (!file.eof()) {
       std::string word;
       file >> word;
-      
+
       if (word == "v") {
          glm::vec3 vertex;
          file >> vertex.x >> vertex.y >> vertex.z;
@@ -356,8 +356,8 @@ bool ObjectGL::readObjectFile(
 }
 
 void ObjectGL::setObject(
-   GLenum draw_mode, 
-   const std::string& obj_file_path, 
+   GLenum draw_mode,
+   const std::string& obj_file_path,
    const std::string& texture_file_name
 )
 {
@@ -365,7 +365,7 @@ void ObjectGL::setObject(
    std::vector<glm::vec3> vertices, normals;
    std::vector<glm::vec2> textures;
    readObjectFile( vertices, normals, textures, obj_file_path );
-   
+
    for (uint i = 0; i < vertices.size(); ++i) {
       DataBuffer.push_back( vertices[i].x );
       DataBuffer.push_back( vertices[i].y );
@@ -429,7 +429,7 @@ void ObjectGL::updateDataBuffer(const std::vector<glm::vec3>& vertices, const st
       DataBuffer.push_back( normals[i].z );
       VerticesCount++;
    }
-   glNamedBufferSubData( VBO, 0, sizeof( GLfloat ) * DataBuffer.size(), DataBuffer.data() );
+   glNamedBufferSubData( VBO, 0, static_cast<GLsizeiptr>(sizeof( GLfloat ) * DataBuffer.size()), DataBuffer.data() );
 }
 
 void ObjectGL::updateDataBuffer(
@@ -453,7 +453,7 @@ void ObjectGL::updateDataBuffer(
       DataBuffer.push_back( textures[i].y );
       VerticesCount++;
    }
-   glNamedBufferSubData( VBO, 0, sizeof( GLfloat ) * DataBuffer.size(), DataBuffer.data() );
+   glNamedBufferSubData( VBO, 0, static_cast<GLsizeiptr>(sizeof( GLfloat ) * DataBuffer.size()), DataBuffer.data() );
 }
 
 void ObjectGL::replaceVertices(
@@ -474,7 +474,7 @@ void ObjectGL::replaceVertices(
       DataBuffer[i * step + 2] = vertices[i].z;
       VerticesCount++;
    }
-   glNamedBufferSubData( VBO, 0, sizeof( GLfloat ) * VerticesCount * step, DataBuffer.data() );
+   glNamedBufferSubData( VBO, 0, static_cast<GLsizeiptr>(sizeof( GLfloat ) * VerticesCount * step), DataBuffer.data() );
 }
 
 void ObjectGL::replaceVertices(
@@ -495,5 +495,5 @@ void ObjectGL::replaceVertices(
       DataBuffer[j * step + 2] = vertices[i + 2];
       VerticesCount++;
    }
-   glNamedBufferSubData( VBO, 0, sizeof( GLfloat ) * VerticesCount * step, DataBuffer.data() );
+   glNamedBufferSubData( VBO, 0, static_cast<GLsizeiptr>(sizeof( GLfloat ) * VerticesCount * step), DataBuffer.data() );
 }

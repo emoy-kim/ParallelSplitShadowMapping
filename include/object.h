@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Shader.h"
+#include "shader.h"
 
 class ObjectGL
 {
@@ -43,8 +43,8 @@ public:
       bool is_grayscale = false
    );
    void setObject(
-      GLenum draw_mode, 
-      const std::string& obj_file_path, 
+      GLenum draw_mode,
+      const std::string& obj_file_path,
       const std::string& texture_file_name
    );
    void setSquareObject(GLenum draw_mode, bool use_texture = true);
@@ -130,10 +130,10 @@ private:
       std::vector<glm::vec3>& normals,
       std::vector<glm::vec2>& textures
    );
-   bool readObjectFile(
-      std::vector<glm::vec3>& vertices, 
-      std::vector<glm::vec3>& normals, 
-      std::vector<glm::vec2>& textures, 
+   static bool readObjectFile(
+      std::vector<glm::vec3>& vertices,
+      std::vector<glm::vec3>& normals,
+      std::vector<glm::vec2>& textures,
       const std::string& file_path
-   ) const;
+   );
 };
