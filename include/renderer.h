@@ -45,10 +45,11 @@ private:
    std::unique_ptr<ObjectGL> TigerObject;
    std::unique_ptr<ObjectGL> PandaObject;
    std::unique_ptr<LightGL> Lights;
+   std::vector<float> SplitPositions;
 
    void registerCallbacks() const;
    void initialize();
-   void writeDepthTexture(const std::string& name);
+   void writeDepthTexture(const std::string& name) const;
 
    static void printOpenGLInformation();
 
@@ -65,16 +66,20 @@ private:
    static void mousewheelWrapper(GLFWwindow* window, double xoffset, double yoffset);
    static void reshapeWrapper(GLFWwindow* window, int width, int height);
 
+   void splitViewFrustum();
    void setLights() const;
    void setGroundObject() const;
    void setTigerObject() const;
    void setPandaObject() const;
    void setDepthFrameBuffer();
+   void getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, float far) const;
+   static void getBoundingBox(std::array<glm::vec3, 8>& bounding_box, const std::array<glm::vec3, 8>& points);
+   [[nodiscard]] glm::mat4 calculateLightCropMatrix(std::array<glm::vec3, 8>& bounding_box) const;
 
    void drawGroundObject(ShaderGL* shader, CameraGL* camera) const;
    void drawTigerObject(ShaderGL* shader, CameraGL* camera) const;
    void drawPandaObject(ShaderGL* shader, CameraGL* camera) const;
-   void drawDepthMapFromLightView(int light_index) const;
-   void drawShadow(int light_index) const;
+   void drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const;
+   void drawShadow(const glm::mat4& light_crop_matrix, int light_index = 0) const;
    void render() const;
 };

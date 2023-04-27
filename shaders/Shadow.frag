@@ -123,7 +123,7 @@ vec4 calculateLightingEquation()
 }
 
 void main()
-{ 
+{
    if (UseTexture == 0) final_color = vec4(one);
    else final_color = texture( BaseTexture, tex_coord );
 

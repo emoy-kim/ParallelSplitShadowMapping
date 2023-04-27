@@ -69,7 +69,7 @@ void RendererGL::initialize()
    );
 }
 
-void RendererGL::writeDepthTexture(const std::string& name)
+void RendererGL::writeDepthTexture(const std::string& name) const
 {
    const int size = ShadowMapSize * ShadowMapSize;
    auto* buffer = new uint8_t[size];
@@ -227,6 +227,22 @@ void RendererGL::registerCallbacks() const
    glfwSetFramebufferSizeCallback( Window, reshapeWrapper );
 }
 
+void RendererGL::splitViewFrustum()
+{
+   constexpr float split_weight = 0.5f;
+   const float n = MainCamera->getNearPlane();
+   const float f = MainCamera->getFarPlane();
+   SplitPositions.resize( SplitNum + 1 );
+   SplitPositions[0] = n;
+   SplitPositions[SplitNum] = f;
+   for (int i = 1; i < SplitNum; ++i) {
+      const auto r = static_cast<float>(i) / static_cast<float>(SplitNum);
+      const float logarithmic_split = n * std::pow( f / n, r );
+      const float uniform_split = n + (f - n) * r;
+      SplitPositions[i] = glm::mix( uniform_split, logarithmic_split, split_weight );
+   }
+}
+
 void RendererGL::setLights() const
 {
    const glm::vec4 light_position(256.0f, 500.0f, 512.0f, 1.0f);
@@ -340,6 +356,89 @@ void RendererGL::setDepthFrameBuffer()
    }
 }
 
+void RendererGL::getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, float far) const
+{
+   const glm::vec3 n = glm::normalize( MainCamera->getInitialReferencePosition() - MainCamera->getInitialCameraPosition() );
+   const glm::vec3 u = glm::normalize( glm::cross( MainCamera->getInitialUpVector(), n ) );
+   const glm::vec3 v = glm::normalize( glm::cross( n, u ) );
+
+   const float near_plane_half_height = std::tan( MainCamera->getFOV() * 0.5f ) * near;
+   const float near_plane_half_width = near_plane_half_height * MainCamera->getAspectRatio();
+   const float far_plane_half_height = std::tan( MainCamera->getFOV() * 0.5f ) * far;
+   const float far_plane_half_width = far_plane_half_height * MainCamera->getAspectRatio();
+
+   const glm::vec3 near_plane_center = MainCamera->getInitialCameraPosition() + n * near;
+   const glm::vec3 far_plane_center = MainCamera->getInitialCameraPosition() + n * far;
+
+   frustum[0] = glm::vec3(near_plane_center - u * near_plane_half_width - v * near_plane_half_height);
+   frustum[1] = glm::vec3(near_plane_center - u * near_plane_half_width + v * near_plane_half_height);
+   frustum[2] = glm::vec3(near_plane_center + u * near_plane_half_width + v * near_plane_half_height);
+   frustum[3] = glm::vec3(near_plane_center + u * near_plane_half_width - v * near_plane_half_height);
+
+   frustum[4] = glm::vec3(far_plane_center - u * far_plane_half_width - v * far_plane_half_height);
+   frustum[5] = glm::vec3(far_plane_center - u * far_plane_half_width + v * far_plane_half_height);
+   frustum[6] = glm::vec3(far_plane_center + u * far_plane_half_width + v * far_plane_half_height);
+   frustum[7] = glm::vec3(far_plane_center + u * far_plane_half_width - v * far_plane_half_height);
+}
+
+void RendererGL::getBoundingBox(std::array<glm::vec3, 8>& bounding_box, const std::array<glm::vec3, 8>& points)
+{
+   auto min_point = glm::vec3(std::numeric_limits<float>::max());
+   auto max_point = glm::vec3(std::numeric_limits<float>::lowest());
+   for (int i = 0; i < 8; ++i) {
+      if (points[i].x < min_point.x) min_point.x = points[i].x;
+      if (points[i].y < min_point.y) min_point.y = points[i].y;
+      if (points[i].z < min_point.z) min_point.z = points[i].z;
+
+      if (points[i].x > max_point.x) max_point.x = points[i].x;
+      if (points[i].y > max_point.y) max_point.y = points[i].y;
+      if (points[i].z > max_point.z) max_point.z = points[i].z;
+   }
+
+   bounding_box[0] = glm::vec3(min_point.x, min_point.y, min_point.z);
+   bounding_box[1] = glm::vec3(max_point.x, min_point.y, min_point.z);
+   bounding_box[2] = glm::vec3(min_point.x, min_point.y, max_point.z);
+   bounding_box[3] = glm::vec3(max_point.x, min_point.y, max_point.z);
+   bounding_box[4] = glm::vec3(min_point.x, max_point.y, min_point.z);
+   bounding_box[5] = glm::vec3(max_point.x, max_point.y, min_point.z);
+   bounding_box[6] = glm::vec3(min_point.x, max_point.y, max_point.z);
+   bounding_box[7] = glm::vec3(max_point.x, max_point.y, max_point.z);
+}
+
+glm::mat4 RendererGL::calculateLightCropMatrix(std::array<glm::vec3, 8>& bounding_box) const
+{
+   std::array<glm::vec4, 8> ndc_points{};
+   const glm::mat4 model_view_projection = LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
+   for (int i = 0; i < 8; ++i) {
+      ndc_points[i] = model_view_projection * glm::vec4(bounding_box[i], 1.0f);
+      ndc_points[i].x /= ndc_points[i].w;
+      ndc_points[i].y /= ndc_points[i].w;
+      ndc_points[i].z /= ndc_points[i].w;
+   }
+
+   auto min_point = glm::vec3(std::numeric_limits<float>::max());
+   auto max_point = glm::vec3(std::numeric_limits<float>::lowest());
+   for (int i = 0; i < 8; ++i) {
+      if (ndc_points[i].x < min_point.x) min_point.x = ndc_points[i].x;
+      if (ndc_points[i].y < min_point.y) min_point.y = ndc_points[i].y;
+      if (ndc_points[i].z < min_point.z) min_point.z = ndc_points[i].z;
+
+      if (ndc_points[i].x > max_point.x) max_point.x = ndc_points[i].x;
+      if (ndc_points[i].y > max_point.y) max_point.y = ndc_points[i].y;
+      if (ndc_points[i].z > max_point.z) max_point.z = ndc_points[i].z;
+   }
+   min_point.z = 0.0f;
+
+   glm::mat4 crop(1.0f);
+   crop[0][0] = 2.0f / (max_point.x - min_point.x);
+   crop[1][1] = 2.0f / (max_point.y - min_point.y);
+   crop[2][2] = 1.0f / (max_point.z - min_point.z);
+   crop[3][0] = -0.5f * (max_point.x + min_point.x) * crop[0][0];
+   crop[3][1] = -0.5f * (max_point.y + min_point.y) * crop[1][1];
+   crop[3][2] = -min_point.z * crop[2][2];
+   return crop;
+}
+
 void RendererGL::drawGroundObject(ShaderGL* shader, CameraGL* camera) const
 {
    shader->transferBasicTransformationUniforms( glm::mat4(1.0f), camera, true );
@@ -378,7 +477,7 @@ void RendererGL::drawPandaObject(ShaderGL* shader, CameraGL* camera) const
    glDrawArrays( PandaObject->getDrawMode(), 0, PandaObject->getVertexNum() );
 }
 
-void RendererGL::drawDepthMapFromLightView(int light_index) const
+void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const
 {
    glViewport( 0, 0, ShadowMapSize, ShadowMapSize );
    glEnable( GL_POLYGON_OFFSET_FILL );
@@ -390,12 +489,7 @@ void RendererGL::drawDepthMapFromLightView(int light_index) const
    glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
    glUseProgram( ObjectShader->getShaderProgram() );
-
-   LightCamera->updateCameraPosition(
-      glm::vec3(Lights->getLightPosition( light_index )),
-      glm::vec3(256.0f, 0.0f, 256.0f),
-      glm::vec3(0.0f, 1.0f, 0.0f)
-   );
+   glUniformMatrix4fv( ObjectShader->getLocation( "LightCropMatrix" ), 1, GL_FALSE, &light_crop_matrix[0][0] );
 
    drawTigerObject( ObjectShader.get(), LightCamera.get() );
    drawPandaObject( ObjectShader.get(), LightCamera.get() );
@@ -404,7 +498,7 @@ void RendererGL::drawDepthMapFromLightView(int light_index) const
    glDisable( GL_POLYGON_OFFSET_FILL );
 }
 
-void RendererGL::drawShadow(int light_index) const
+void RendererGL::drawShadow(const glm::mat4& light_crop_matrix, int light_index) const
 {
    glViewport( 0, 0, FrameWidth, FrameHeight );
    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -414,7 +508,7 @@ void RendererGL::drawShadow(int light_index) const
    Lights->transferUniformsToShader( ShadowShader.get() );
    glUniform1i( ShadowShader->getLocation( "LightIndex" ), light_index );
 
-   const glm::mat4 model_view_projection = LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
+   const glm::mat4 model_view_projection = light_crop_matrix * LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
    glUniformMatrix4fv( ShadowShader->getLocation( "LightModelViewProjectionMatrix" ), 1, GL_FALSE, &model_view_projection[0][0] );
 
    glBindTextureUnit( 1, DepthTextureID );
@@ -431,14 +525,36 @@ void RendererGL::render() const
    const float light_z = 512.0f * std::sin( LightTheta ) + 256.0f;
    Lights->setLightPosition( glm::vec4(light_x, 200.0f, light_z, 0.0f), 0 );
 
-   drawDepthMapFromLightView( 0 );
-   drawShadow( 0 );
+   const float n = MainCamera->getNearPlane();
+   const float f = MainCamera->getFarPlane();
+   for (int i = 0; i < SplitNum; ++i) {
+      LightCamera->updateCameraPosition(
+         glm::vec3(Lights->getLightPosition( 0 )),
+         glm::vec3(256.0f, 0.0f, 256.0f),
+         glm::vec3(0.0f, 1.0f, 0.0f)
+      );
+
+      std::array<glm::vec3, 8> frustum{};
+      getSplitFrustum( frustum, SplitPositions[i], SplitPositions[i + 1] );
+
+      std::array<glm::vec3, 8> bounding_box{};
+      getBoundingBox( bounding_box, frustum );
+
+      const glm::mat4 crop_matrix = calculateLightCropMatrix( bounding_box );
+
+      drawDepthMapFromLightView( crop_matrix );
+
+      glDepthRange( (SplitPositions[i] - n) / (f - n), (SplitPositions[i + 1] - n) / (f - n) );
+      drawShadow( crop_matrix );
+      glDepthRange( 0.0f, 1.0f );
+   }
 }
 
 void RendererGL::play()
 {
    if (glfwWindowShouldClose( Window )) initialize();
 
+   splitViewFrustum();
    setLights();
    setGroundObject();
    setTigerObject();
@@ -446,6 +562,8 @@ void RendererGL::play()
    setDepthFrameBuffer();
 
    ObjectShader->setBasicUniformLocations();
+   ObjectShader->addUniformLocation( "LightCropMatrix" );
+
    ShadowShader->setUniformLocations( 1 );
    ShadowShader->addUniformLocation( "LightIndex" );
    ShadowShader->addUniformLocation( "LightModelViewProjectionMatrix" );

@@ -16,8 +16,13 @@ public:
    );
 
    [[nodiscard]] bool getMovingState() const { return IsMoving; }
+   [[nodiscard]] float getFOV() const { return FOV; }
    [[nodiscard]] float getNearPlane() const { return NearPlane; }
    [[nodiscard]] float getFarPlane() const { return FarPlane; }
+   [[nodiscard]] float getAspectRatio() const { return AspectRatio; }
+   [[nodiscard]] glm::vec3 getInitialCameraPosition() const { return InitCamPos; }
+   [[nodiscard]] glm::vec3 getInitialReferencePosition() const { return InitRefPos; }
+   [[nodiscard]] glm::vec3 getInitialUpVector() const { return InitUpVec; }
    [[nodiscard]] glm::vec3 getCameraPosition() const { return CamPos; }
    [[nodiscard]] const glm::mat4& getViewMatrix() const { return ViewMatrix; }
    [[nodiscard]] const glm::mat4& getProjectionMatrix() const { return ProjectionMatrix; }
