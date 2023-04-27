@@ -33,6 +33,7 @@ private:
    int FrameHeight;
    int ShadowMapSize;
    int SplitNum;
+   int ActiveLightIndex;
    GLuint FBO;
    GLuint DepthTextureID;
    glm::ivec2 ClickedPoint;
@@ -80,6 +81,6 @@ private:
    void drawTigerObject(ShaderGL* shader, CameraGL* camera) const;
    void drawPandaObject(ShaderGL* shader, CameraGL* camera) const;
    void drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const;
-   void drawShadow(const glm::mat4& light_crop_matrix, int light_index = 0) const;
+   void drawShadow(const glm::mat4& light_crop_matrix) const;
    void render() const;
 };

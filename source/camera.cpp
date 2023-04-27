@@ -141,7 +141,7 @@ void CameraGL::updatePerspectiveCamera(int width, int height)
    ProjectionMatrix = glm::perspective( glm::radians( FOV ), AspectRatio, NearPlane, FarPlane );
 }
 
-void CameraGL::updateCameraPosition(
+void CameraGL::updateCameraView(
    const glm::vec3& cam_position,
    const glm::vec3& view_reference_position,
    const glm::vec3& view_up_vector
@@ -152,6 +152,20 @@ void CameraGL::updateCameraPosition(
    InitUpVec = view_up_vector;
    ViewMatrix = glm::lookAt( InitCamPos, InitRefPos, InitUpVec );
    updateCamera();
+}
+
+void CameraGL::updateNearFarPlanes(float near, float far)
+{
+   NearPlane = near;
+   FarPlane = far;
+   if (IsPerspective) ProjectionMatrix = glm::perspective( glm::radians( FOV ), AspectRatio, near, far );
+   else {
+      ProjectionMatrix = glm::ortho(
+         -static_cast<float>(Width) * 0.5f, static_cast<float>(Width) * 0.5f,
+         -static_cast<float>(Height) * 0.5f, static_cast<float>(Height) * 0.5f,
+         near, far
+      );
+   }
 }
 
 float CameraGL::linearizeDepthValue(float depth) const

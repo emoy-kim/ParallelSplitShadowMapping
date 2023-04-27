@@ -28,7 +28,6 @@ public:
    [[nodiscard]] const glm::mat4& getProjectionMatrix() const { return ProjectionMatrix; }
    [[nodiscard]] float linearizeDepthValue(float depth) const;
    void setMovingState(bool is_moving) { IsMoving = is_moving; }
-   void updateCamera();
    void pitch(int angle);
    void yaw(int angle);
    void rotateAroundWorldY(int angle);
@@ -43,11 +42,12 @@ public:
    void resetCamera();
    void updateOrthographicCamera(int width, int height);
    void updatePerspectiveCamera(int width, int height);
-   void updateCameraPosition(
+   void updateCameraView(
       const glm::vec3& cam_position,
       const glm::vec3& view_reference_position,
       const glm::vec3& view_up_vector
    );
+   void updateNearFarPlanes(float near, float far);
 
 private:
    bool IsPerspective;
@@ -68,4 +68,6 @@ private:
    glm::vec3 CamPos;
    glm::mat4 ViewMatrix;
    glm::mat4 ProjectionMatrix;
+
+   void updateCamera();
 };
