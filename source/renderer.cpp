@@ -394,8 +394,6 @@ void RendererGL::drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const
 void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const
 {
    glViewport( 0, 0, ShadowMapSize, ShadowMapSize );
-   glEnable( GL_POLYGON_OFFSET_FILL );
-   glPolygonOffset( 2.0f, 4.0f );
 
    constexpr GLfloat one = 1.0f;
    glBindFramebuffer( GL_FRAMEBUFFER, FBO );
@@ -407,8 +405,6 @@ void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) c
 
    drawBunnyObject( ObjectShader.get(), LightCamera.get() );
    drawBoxObject( ObjectShader.get(), LightCamera.get() );
-
-   glDisable( GL_POLYGON_OFFSET_FILL );
 }
 
 void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const

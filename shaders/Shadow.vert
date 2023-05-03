@@ -28,10 +28,11 @@ void main()
 
    tex_coord = v_tex_coord;
 
+   const float bias_for_shadow_acne = 0.005f;
    vec4 position_in_light_cc = LightModelViewProjectionMatrix * WorldMatrix * vec4(v_position, 1.0f);
    depth_map_coord.x = 0.5f * (position_in_light_cc.x + position_in_light_cc.w);
    depth_map_coord.y = 0.5f * (position_in_light_cc.y + position_in_light_cc.w);
-   depth_map_coord.z = 0.5f * (position_in_light_cc.z + position_in_light_cc.w);
+   depth_map_coord.z = 0.5f * (position_in_light_cc.z + position_in_light_cc.w) - bias_for_shadow_acne;
    depth_map_coord.w = position_in_light_cc.w;
 
    gl_Position = ModelViewProjectionMatrix * vec4(v_position, 1.0f);
