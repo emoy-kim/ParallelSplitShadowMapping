@@ -1,10 +1,8 @@
 #include "object.h"
 
 ObjectGL::ObjectGL() :
-   ImageBuffer( nullptr ), VAO( 0 ), VBO( 0 ), DrawMode( 0 ), VerticesCount( 0 ),
-   EmissionColor( 0.0f, 0.0f, 0.0f, 1.0f ),
-   AmbientReflectionColor( 0.2f, 0.2f, 0.2f, 1.0f ),
-   DiffuseReflectionColor( 0.8f, 0.8f, 0.8f, 1.0f ),
+   VAO( 0 ), VBO( 0 ), DrawMode( 0 ), VerticesCount( 0 ), EmissionColor( 0.0f, 0.0f, 0.0f, 1.0f ),
+   AmbientReflectionColor( 0.2f, 0.2f, 0.2f, 1.0f ), DiffuseReflectionColor( 0.8f, 0.8f, 0.8f, 1.0f ),
    SpecularReflectionColor( 0.0f, 0.0f, 0.0f, 1.0f ), SpecularReflectionExponent( 0.0f )
 {
 }
@@ -21,7 +19,6 @@ ObjectGL::~ObjectGL()
    for (const auto& buffer : CustomBuffers) {
       if (buffer.second != 0) glDeleteBuffers( 1, &buffer.second );
    }
-   delete [] ImageBuffer;
 }
 
 void ObjectGL::setEmissionColor(const glm::vec4& emission_color)
@@ -310,6 +307,7 @@ bool ObjectGL::readObjectFile(
       return false;
    }
 
+   bool found_normals = false, found_textures = false;
    std::vector<glm::vec3> vertex_buffer, normal_buffer;
    std::vector<glm::vec2> texture_buffer;
    std::vector<int> vertex_indices, normal_indices, texture_indices;
@@ -326,33 +324,68 @@ bool ObjectGL::readObjectFile(
          glm::vec2 uv;
          file >> uv.x >> uv.y;
          texture_buffer.emplace_back( uv );
+         found_textures = true;
       }
       else if (word == "vn") {
          glm::vec3 normal;
          file >> normal.x >> normal.y >> normal.z;
          normal_buffer.emplace_back( normal );
+         found_normals = true;
       }
       else if (word == "f") {
-         char c;
-         vertex_indices.emplace_back(); file >> vertex_indices.back(); file >> c;
-         texture_indices.emplace_back(); file >> texture_indices.back(); file >> c;
-         normal_indices.emplace_back(); file >> normal_indices.back();
-         vertex_indices.emplace_back(); file >> vertex_indices.back(); file >> c;
-         texture_indices.emplace_back(); file >> texture_indices.back(); file >> c;
-         normal_indices.emplace_back(); file >> normal_indices.back();
-         vertex_indices.emplace_back(); file >> vertex_indices.back(); file >> c;
-         texture_indices.emplace_back(); file >> texture_indices.back(); file >> c;
-         normal_indices.emplace_back(); file >> normal_indices.back();
+         std::string face;
+         const std::regex delimiter("[/]");
+         for (int i = 0; i < 3; ++i) {
+            file >> face;
+            const std::sregex_token_iterator it(face.begin(), face.end(), delimiter, -1);
+            const std::vector<std::string> vtn(it, std::sregex_token_iterator());
+            vertex_indices.emplace_back( std::stoi( vtn[0] ) );
+            if (found_textures) texture_indices.emplace_back( std::stoi( vtn[1] ) );
+            if (found_normals) normal_indices.emplace_back( std::stoi( vtn[2] ) );
+         }
       }
       else std::getline( file, word );
    }
 
    for (uint i = 0; i < vertex_indices.size(); ++i) {
       vertices.emplace_back( vertex_buffer[vertex_indices[i] - 1] );
-      normals.emplace_back( normal_buffer[normal_indices[i] - 1] );
-      textures.emplace_back( texture_buffer[texture_indices[i] - 1] );
+      if (found_normals) normals.emplace_back( normal_buffer[normal_indices[i] - 1] );
+      if (found_textures) textures.emplace_back( texture_buffer[texture_indices[i] - 1] );
    }
    return true;
+}
+
+void ObjectGL::setObject(GLenum draw_mode, const std::string& obj_file_path)
+{
+   DrawMode = draw_mode;
+   std::vector<glm::vec3> vertices, normals;
+   std::vector<glm::vec2> textures;
+   readObjectFile( vertices, normals, textures, obj_file_path );
+
+   const bool normals_exist = !normals.empty();
+   const bool textures_exist = !textures.empty();
+   for (uint i = 0; i < vertices.size(); ++i) {
+      DataBuffer.push_back( vertices[i].x );
+      DataBuffer.push_back( vertices[i].y );
+      DataBuffer.push_back( vertices[i].z );
+      if (normals_exist) {
+         DataBuffer.push_back( normals[i].x );
+         DataBuffer.push_back( normals[i].y );
+         DataBuffer.push_back( normals[i].z );
+      }
+      if (textures_exist) {
+         DataBuffer.push_back( textures[i].x );
+         DataBuffer.push_back( textures[i].y );
+      }
+      VerticesCount++;
+   }
+   int n = 3;
+   if (normals_exist) n += 3;
+   if (textures_exist) n += 2;
+   const auto n_bytes_per_vertex = static_cast<int>(n * sizeof( GLfloat ));
+   prepareVertexBuffer( n_bytes_per_vertex );
+   if (normals_exist) prepareNormal();
+   if (textures_exist) prepareTexture( normals_exist );
 }
 
 void ObjectGL::setObject(
@@ -366,21 +399,26 @@ void ObjectGL::setObject(
    std::vector<glm::vec2> textures;
    readObjectFile( vertices, normals, textures, obj_file_path );
 
+   assert( !textures.empty() );
+
+   const bool normals_exist = !normals.empty();
    for (uint i = 0; i < vertices.size(); ++i) {
       DataBuffer.push_back( vertices[i].x );
       DataBuffer.push_back( vertices[i].y );
       DataBuffer.push_back( vertices[i].z );
-      DataBuffer.push_back( normals[i].x );
-      DataBuffer.push_back( normals[i].y );
-      DataBuffer.push_back( normals[i].z );
+      if (normals_exist) {
+         DataBuffer.push_back( normals[i].x );
+         DataBuffer.push_back( normals[i].y );
+         DataBuffer.push_back( normals[i].z );
+      }
       DataBuffer.push_back( textures[i].x );
       DataBuffer.push_back( textures[i].y );
       VerticesCount++;
    }
-   const int n_bytes_per_vertex = 8 * sizeof(GLfloat);
+   const int n_bytes_per_vertex = normals_exist ? 8 * sizeof( GLfloat ) : 5 * sizeof( GLfloat );
    prepareVertexBuffer( n_bytes_per_vertex );
-   prepareNormal();
-   prepareTexture( true );
+   if (normals_exist) prepareNormal();
+   prepareTexture( normals_exist );
    addTexture( texture_file_name );
 }
 

@@ -10,7 +10,7 @@ public:
       const glm::vec3& cam_position,
       const glm::vec3& view_reference_position,
       const glm::vec3& view_up_vector,
-      float fov = 60.0f,
+      float fov = 70.0f,
       float near_plane = 1.0f,
       float far_plane = 1000.0f
    );

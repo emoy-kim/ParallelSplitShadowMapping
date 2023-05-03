@@ -2,11 +2,11 @@
 
 RendererGL::RendererGL() :
    Window( nullptr ), FrameWidth( 1920 ), FrameHeight( 1080 ), ShadowMapSize( 1024 ), SplitNum( 4 ),
-   ActiveLightIndex( 0 ), FBO( 0 ), DepthTextureID( 0 ), ClickedPoint( -1, -1 ), LightTheta( 0.0f ),
+   ActiveLightIndex( 0 ), FBO( 0 ), DepthTextureID( 0 ), ClickedPoint( -1, -1 ),
    MainCamera( std::make_unique<CameraGL>() ), LightCamera( std::make_unique<CameraGL>() ),
    ObjectShader( std::make_unique<ShaderGL>() ), ShadowShader( std::make_unique<ShaderGL>() ),
-   GroundObject( std::make_unique<ObjectGL>() ), TigerObject( std::make_unique<ObjectGL>() ),
-   PandaObject( std::make_unique<ObjectGL>() ), Lights( std::make_unique<LightGL>() )
+   WallObject( std::make_unique<ObjectGL>() ), BunnyObject( std::make_unique<ObjectGL>() ),
+   Lights( std::make_unique<LightGL>() )
 {
    Renderer = this;
 
@@ -241,96 +241,46 @@ void RendererGL::splitViewFrustum()
 
 void RendererGL::setLights() const
 {
-   const glm::vec4 light_position(256.0f, 500.0f, 512.0f, 1.0f);
+   const glm::vec4 light_position(300.0f, 300.0f, 300.0f, 0.0f);
    const glm::vec4 ambient_color(1.0f, 1.0f, 1.0f, 1.0f);
-   const glm::vec4 diffuse_color(0.7f, 0.7f, 0.7f, 1.0f);
+   const glm::vec4 diffuse_color(0.9f, 0.9f, 0.9f, 1.0f);
    const glm::vec4 specular_color(0.9f, 0.9f, 0.9f, 1.0f);
    Lights->addLight( light_position, ambient_color, diffuse_color, specular_color );
 }
 
-void RendererGL::setGroundObject() const
+void RendererGL::setWallObject() const
 {
-   constexpr float size = 512.0f;
-   std::vector<glm::vec3> ground_vertices;
-   ground_vertices.emplace_back( 0.0f, 0.0f, 0.0f );
-   ground_vertices.emplace_back( size, 0.0f, 0.0f );
-   ground_vertices.emplace_back( size, 0.0f, size );
+   constexpr float half_length = 128.0f;
+   std::vector<glm::vec3> wall_vertices;
+   wall_vertices.emplace_back( -half_length, 0.0f, -half_length );
+   wall_vertices.emplace_back( half_length, 0.0f, -half_length );
+   wall_vertices.emplace_back( half_length, 0.0f, half_length );
 
-   ground_vertices.emplace_back( 0.0f, 0.0f, 0.0f );
-   ground_vertices.emplace_back( size, 0.0f, size );
-   ground_vertices.emplace_back( 0.0f, 0.0f, size );
+   wall_vertices.emplace_back( -half_length, 0.0f, -half_length );
+   wall_vertices.emplace_back( half_length, 0.0f, half_length );
+   wall_vertices.emplace_back( -half_length, 0.0f, half_length );
 
-   std::vector<glm::vec3> ground_normals;
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   std::vector<glm::vec3> wall_normals;
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
 
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
-   ground_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
+   wall_normals.emplace_back( 0.0f, 1.0f, 0.0f );
 
-   std::vector<glm::vec2> ground_textures;
-   ground_textures.emplace_back( 0.0f, 0.0f );
-   ground_textures.emplace_back( 1.0f, 0.0f );
-   ground_textures.emplace_back( 1.0f, 1.0f );
-
-   ground_textures.emplace_back( 0.0f, 0.0f );
-   ground_textures.emplace_back( 1.0f, 1.0f );
-   ground_textures.emplace_back( 0.0f, 1.0f );
-
-   const std::string sample_directory_path = std::string(CMAKE_SOURCE_DIR) + "/samples";
-   GroundObject->setObject(
-      GL_TRIANGLES,
-      ground_vertices,
-      ground_normals,
-      ground_textures,
-      std::string(sample_directory_path + "/sand.jpg")
-   );
-   GroundObject->setDiffuseReflectionColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
+   WallObject->setObject( GL_TRIANGLES, wall_vertices, wall_normals );
+   WallObject->setDiffuseReflectionColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
 }
 
-void RendererGL::setTigerObject() const
+void RendererGL::setBunnyObject() const
 {
    const std::string sample_directory_path = std::string(CMAKE_SOURCE_DIR) + "/samples";
-   std::ifstream file(std::string(sample_directory_path + "/Tiger/tiger.txt"));
-   int polygon_num;
-   file >> polygon_num;
-
-   const int vertex_num = polygon_num * 3;
-   std::vector<glm::vec3> tiger_vertices(vertex_num);
-   std::vector<glm::vec3> tiger_normals(vertex_num);
-   std::vector<glm::vec2> tiger_textures(vertex_num);
-   for (int i = 0; i < polygon_num; ++i) {
-      int triangle_vertex_num;
-      file >> triangle_vertex_num;
-      for (int v = 0; v < triangle_vertex_num; ++v) {
-         const int index = i * triangle_vertex_num + v;
-         file >> tiger_vertices[index].x >> tiger_vertices[index].y >> tiger_vertices[index].z;
-         file >> tiger_normals[index].x >> tiger_normals[index].y >> tiger_normals[index].z;
-         file >> tiger_textures[index].x >> tiger_textures[index].y;
-      }
-   }
-   file.close();
-
-   TigerObject->setObject(
+   BunnyObject->setObject(
       GL_TRIANGLES,
-      tiger_vertices,
-      tiger_normals,
-      tiger_textures,
-      std::string(sample_directory_path + "/Tiger/tiger.jpg")
+      std::string(sample_directory_path + "/Bunny/bunny.obj")
    );
-   TigerObject->setDiffuseReflectionColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-}
-
-void RendererGL::setPandaObject() const
-{
-   const std::string sample_directory_path = std::string(CMAKE_SOURCE_DIR) + "/samples";
-   PandaObject->setObject(
-      GL_TRIANGLES,
-      std::string(sample_directory_path + "/Panda/panda.obj"),
-      std::string(sample_directory_path + "/Panda/panda.png")
-   );
-   PandaObject->setDiffuseReflectionColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
+   BunnyObject->setDiffuseReflectionColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
 }
 
 void RendererGL::setDepthFrameBuffer()
@@ -435,42 +385,42 @@ glm::mat4 RendererGL::calculateLightCropMatrix(std::array<glm::vec3, 8>& boundin
    return crop;
 }
 
-void RendererGL::drawGroundObject(ShaderGL* shader, CameraGL* camera) const
+void RendererGL::drawBoxObject(ShaderGL* shader, const CameraGL* camera) const
 {
-   shader->transferBasicTransformationUniforms( glm::mat4(1.0f), camera, true );
-   GroundObject->transferUniformsToShader( shader );
+   glm::mat4 to_world(1.0f);
+   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   WallObject->setDiffuseReflectionColor( { 0.0f, 0.0f, 1.0f, 1.0f } );
+   WallObject->transferUniformsToShader( shader );
+   glBindVertexArray( WallObject->getVAO() );
+   glDrawArrays( WallObject->getDrawMode(), 0, WallObject->getVertexNum() );
 
-   glBindTextureUnit( 0, GroundObject->getTextureID( 0 ) );
-   glBindVertexArray( GroundObject->getVAO() );
-   glDrawArrays( GroundObject->getDrawMode(), 0, GroundObject->getVertexNum() );
+   to_world =
+      glm::translate( glm::mat4(1.0f), glm::vec3(0.0f, 128.0f, -128.0f) ) *
+      glm::rotate( glm::mat4(1.0f), glm::radians( 90.0f ), glm::vec3(1.0f, 0.0f, 0.0f) );
+   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   WallObject->setDiffuseReflectionColor( { 0.0f, 1.0f, 0.0f, 1.0f } );
+   WallObject->transferUniformsToShader( shader );
+   glDrawArrays( WallObject->getDrawMode(), 0, WallObject->getVertexNum() );
+
+   to_world =
+      glm::translate( glm::mat4(1.0f), glm::vec3(-128.0f, 128.0f, 0.0f) ) *
+      glm::rotate( glm::mat4(1.0f), glm::radians( -90.0f ), glm::vec3(0.0f, 0.0f, 1.0f) );
+   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   WallObject->setDiffuseReflectionColor( { 1.0f, 0.0f, 0.0f, 1.0f } );
+   WallObject->transferUniformsToShader( shader );
+   glDrawArrays( WallObject->getDrawMode(), 0, WallObject->getVertexNum() );
 }
 
-void RendererGL::drawTigerObject(ShaderGL* shader, CameraGL* camera) const
+void RendererGL::drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const
 {
    const glm::mat4 to_world =
-      glm::translate( glm::mat4(1.0f), glm::vec3(250.0f, 0.0f, 330.0f) ) *
-      glm::rotate( glm::mat4(1.0f), glm::radians( 180.0f ), glm::vec3(0.0f, 1.0f, 0.0f) ) *
-      glm::rotate( glm::mat4(1.0f), glm::radians( -90.0f ), glm::vec3(1.0f, 0.0f, 0.0f) ) *
-      glm::scale( glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f) );
-   shader->transferBasicTransformationUniforms( to_world, camera, true );
-   TigerObject->transferUniformsToShader( shader );
+      glm::translate( glm::mat4(1.0f), glm::vec3(0.0f, 10.0f, -30.0f) ) *
+      glm::scale( glm::mat4(1.0f), glm::vec3(100.0f, 100.0f, 100.0f) );
+   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   BunnyObject->transferUniformsToShader( shader );
 
-   glBindTextureUnit( 0, TigerObject->getTextureID( 0 ) );
-   glBindVertexArray( TigerObject->getVAO() );
-   glDrawArrays( TigerObject->getDrawMode(), 0, TigerObject->getVertexNum() );
-}
-
-void RendererGL::drawPandaObject(ShaderGL* shader, CameraGL* camera) const
-{
-   const glm::mat4 to_world =
-      glm::translate( glm::mat4(1.0f), glm::vec3(250.0f, -5.0f, 180.0f) ) *
-      glm::scale( glm::mat4(1.0f), glm::vec3(20.0f, 20.0f, 20.0f) );
-   shader->transferBasicTransformationUniforms( to_world, camera, true );
-   PandaObject->transferUniformsToShader( shader );
-
-   glBindTextureUnit( 0, PandaObject->getTextureID( 0 ) );
-   glBindVertexArray( PandaObject->getVAO() );
-   glDrawArrays( PandaObject->getDrawMode(), 0, PandaObject->getVertexNum() );
+   glBindVertexArray( BunnyObject->getVAO() );
+   glDrawArrays( BunnyObject->getDrawMode(), 0, BunnyObject->getVertexNum() );
 }
 
 void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const
@@ -487,9 +437,8 @@ void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) c
    glUseProgram( ObjectShader->getShaderProgram() );
    glUniformMatrix4fv( ObjectShader->getLocation( "LightCropMatrix" ), 1, GL_FALSE, &light_crop_matrix[0][0] );
 
-   drawTigerObject( ObjectShader.get(), LightCamera.get() );
-   drawPandaObject( ObjectShader.get(), LightCamera.get() );
-   drawGroundObject( ObjectShader.get(), LightCamera.get() );
+   drawBunnyObject( ObjectShader.get(), LightCamera.get() );
+   drawBoxObject( ObjectShader.get(), LightCamera.get() );
 
    glDisable( GL_POLYGON_OFFSET_FILL );
 }
@@ -508,22 +457,18 @@ void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const
    glUniformMatrix4fv( ShadowShader->getLocation( "LightModelViewProjectionMatrix" ), 1, GL_FALSE, &model_view_projection[0][0] );
 
    glBindTextureUnit( 1, DepthTextureID );
-   drawTigerObject( ShadowShader.get(), MainCamera.get() );
-   drawPandaObject( ShadowShader.get(), MainCamera.get() );
-   drawGroundObject( ShadowShader.get(), MainCamera.get() );
+   drawBunnyObject( ShadowShader.get(), MainCamera.get() );
+   drawBoxObject( ShadowShader.get(), MainCamera.get() );
 }
 
 void RendererGL::render() const
 {
    glClear( OPENGL_COLOR_BUFFER_BIT | OPENGL_DEPTH_BUFFER_BIT );
 
-   const float light_x = 256.0f * std::cos( LightTheta ) + 256.0f;
-   const float light_z = 256.0f * std::sin( LightTheta ) + 256.0f;
-   Lights->setLightPosition( glm::vec4(light_x, 100.0f, light_z, 0.0f), 0 );
    LightCamera->updateCameraView(
-      glm::vec3( Lights->getLightPosition( ActiveLightIndex ) ),
-      glm::vec3( 256.0f, 0.0f, 256.0f ),
-      glm::vec3( 0.0f, 1.0f, 0.0f )
+      glm::vec3(Lights->getLightPosition( ActiveLightIndex )),
+      glm::vec3(-100.0f, -100.0f, 0.0f),
+      glm::vec3(0.0f, 1.0f, 0.0f)
    );
 
    const float original_n = MainCamera->getNearPlane();
@@ -559,9 +504,8 @@ void RendererGL::play()
 
    splitViewFrustum();
    setLights();
-   setGroundObject();
-   setTigerObject();
-   setPandaObject();
+   setWallObject();
+   setBunnyObject();
    setDepthFrameBuffer();
 
    ObjectShader->setBasicUniformLocations();
@@ -573,9 +517,6 @@ void RendererGL::play()
 
    while (!glfwWindowShouldClose( Window )) {
       render();
-
-      LightTheta += 0.01f;
-      if (LightTheta >= 360.0f) LightTheta -= 360.0f;
 
       glfwSwapBuffers( Window );
       glfwPollEvents();

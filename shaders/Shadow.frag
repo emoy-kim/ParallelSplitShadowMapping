@@ -80,6 +80,7 @@ float getShadowFactor()
 {
    if (zero <= depth_map_coord.x && depth_map_coord.x <= depth_map_coord.w &&
        zero <= depth_map_coord.y && depth_map_coord.y <= depth_map_coord.w &&
+       zero <= depth_map_coord.z && depth_map_coord.z <= depth_map_coord.w &&
        zero < depth_map_coord.w) {
       return textureProj( DepthMap, depth_map_coord );
    }

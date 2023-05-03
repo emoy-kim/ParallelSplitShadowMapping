@@ -42,6 +42,7 @@ public:
       const std::string& texture_file_path,
       bool is_grayscale = false
    );
+   void setObject(GLenum draw_mode, const std::string& obj_file_path);
    void setObject(
       GLenum draw_mode,
       const std::string& obj_file_path,
@@ -106,7 +107,6 @@ public:
    }
 
 private:
-   uint8_t* ImageBuffer;
    std::vector<GLfloat> DataBuffer;
    GLuint VAO;
    GLuint VBO;

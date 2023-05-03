@@ -37,14 +37,12 @@ private:
    GLuint FBO;
    GLuint DepthTextureID;
    glm::ivec2 ClickedPoint;
-   float LightTheta;
    std::unique_ptr<CameraGL> MainCamera;
    std::unique_ptr<CameraGL> LightCamera;
    std::unique_ptr<ShaderGL> ObjectShader;
    std::unique_ptr<ShaderGL> ShadowShader;
-   std::unique_ptr<ObjectGL> GroundObject;
-   std::unique_ptr<ObjectGL> TigerObject;
-   std::unique_ptr<ObjectGL> PandaObject;
+   std::unique_ptr<ObjectGL> WallObject;
+   std::unique_ptr<ObjectGL> BunnyObject;
    std::unique_ptr<LightGL> Lights;
    std::vector<float> SplitPositions;
 
@@ -69,17 +67,15 @@ private:
 
    void splitViewFrustum();
    void setLights() const;
-   void setGroundObject() const;
-   void setTigerObject() const;
-   void setPandaObject() const;
+   void setWallObject() const;
+   void setBunnyObject() const;
    void setDepthFrameBuffer();
    void getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, float far) const;
    static void getBoundingBox(std::array<glm::vec3, 8>& bounding_box, const std::array<glm::vec3, 8>& points);
    [[nodiscard]] glm::mat4 calculateLightCropMatrix(std::array<glm::vec3, 8>& bounding_box) const;
 
-   void drawGroundObject(ShaderGL* shader, CameraGL* camera) const;
-   void drawTigerObject(ShaderGL* shader, CameraGL* camera) const;
-   void drawPandaObject(ShaderGL* shader, CameraGL* camera) const;
+   void drawBoxObject(ShaderGL* shader, const CameraGL* camera) const;
+   void drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const;
    void drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const;
    void drawShadow(const glm::mat4& light_crop_matrix) const;
    void render() const;
