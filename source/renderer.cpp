@@ -69,6 +69,22 @@ void RendererGL::initialize()
    );
 }
 
+void RendererGL::writeFrame(const std::string& name) const
+{
+   const int size = FrameWidth * FrameHeight * 3;
+   auto* buffer = new uint8_t[size];
+   glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+   glReadBuffer( GL_COLOR_ATTACHMENT0 );
+   glReadPixels( 0, 0, FrameWidth, FrameHeight, GL_BGR, GL_UNSIGNED_BYTE, buffer );
+   FIBITMAP* image = FreeImage_ConvertFromRawBits(
+      buffer, FrameWidth, FrameHeight, FrameWidth * 3, 24,
+      FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK, false
+   );
+   FreeImage_Save( FIF_PNG, image, name.c_str() );
+   FreeImage_Unload( image );
+   delete [] buffer;
+}
+
 void RendererGL::writeDepthTexture(const std::string& name) const
 {
    const int size = ShadowMapSize * ShadowMapSize;

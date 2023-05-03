@@ -48,6 +48,7 @@ private:
 
    void registerCallbacks() const;
    void initialize();
+   void writeFrame(const std::string& name) const;
    void writeDepthTexture(const std::string& name) const;
 
    static void printOpenGLInformation();
