@@ -105,27 +105,6 @@ void RendererGL::keyboard(GLFWwindow* window, int key, int scancode, int action,
    if (action != GLFW_PRESS) return;
 
    switch (key) {
-      case GLFW_KEY_UP:
-         MainCamera->moveForward();
-         break;
-      case GLFW_KEY_DOWN:
-         MainCamera->moveBackward();
-         break;
-      case GLFW_KEY_LEFT:
-         MainCamera->moveLeft();
-         break;
-      case GLFW_KEY_RIGHT:
-         MainCamera->moveRight();
-         break;
-      case GLFW_KEY_W:
-         MainCamera->moveUp();
-         break;
-      case GLFW_KEY_S:
-         MainCamera->moveDown();
-         break;
-      case GLFW_KEY_I:
-         MainCamera->resetCamera();
-         break;
       case GLFW_KEY_L:
          Lights->toggleLightSwitch();
          std::cout << "Light Turned " << (Lights->isLightOn() ? "On!\n" : "Off!\n");
@@ -151,8 +130,8 @@ void RendererGL::keyboardWrapper(GLFWwindow* window, int key, int scancode, int 
 void RendererGL::cursor(GLFWwindow* window, double xpos, double ypos)
 {
    if (MainCamera->getMovingState()) {
-      const auto x = static_cast<int>(round( xpos ));
-      const auto y = static_cast<int>(round( ypos ));
+      const auto x = static_cast<int>(std::round( xpos ));
+      const auto y = static_cast<int>(std::round( ypos ));
       const int dx = x - ClickedPoint.x;
       const int dy = y - ClickedPoint.y;
       MainCamera->moveForward( -dy );
