@@ -4,4 +4,4 @@
   
   Please refer to [this](https://jeesunkim.com/projects/) to see the details.
 
-![result](https://user-images.githubusercontent.com/17864157/235908178-fdf29736-f2ac-4af9-95dd-5fb2e04164bb.png)
+![result_with_light_view](https://user-images.githubusercontent.com/17864157/236124890-9cdc4d65-67cd-43c2-87e5-9ed386498798.png)
