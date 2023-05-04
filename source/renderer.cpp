@@ -201,7 +201,7 @@ void RendererGL::splitViewFrustum()
    SplitPositions[SplitNum] = f;
    for (int i = 1; i < SplitNum; ++i) {
       const auto r = static_cast<float>(i) / static_cast<float>(SplitNum);
-      const float logarithmic_split = n * std::pow( f / n, r );
+      const float logarithmic_split = (n + f) * 0.5f * std::pow( 2.0f * f / (n + f), r );
       const float uniform_split = n + (f - n) * r;
       SplitPositions[i] = glm::mix( uniform_split, logarithmic_split, split_weight );
    }
@@ -394,9 +394,9 @@ void RendererGL::drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const
 void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const
 {
    glViewport( 0, 0, ShadowMapSize, ShadowMapSize );
+   glBindFramebuffer( GL_FRAMEBUFFER, FBO );
 
    constexpr GLfloat one = 1.0f;
-   glBindFramebuffer( GL_FRAMEBUFFER, FBO );
    glClearNamedFramebufferfv( FBO, GL_DEPTH, 0, &one );
    glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
