@@ -1,6 +1,6 @@
 # ParallelSplitShadowMapping
 
-  This code is about Parallel-Split Shadow Maps on Programmable GPUs from GPU Gem3.
+  This code is about Parallel-Split Shadow Maps on Programmable GPUs from GPU Gems 3.
   
   Please refer to [this](https://jeesunkim.com/projects/gpu-gems/parallel_split_shadow_mapping/) to see the details.
 
