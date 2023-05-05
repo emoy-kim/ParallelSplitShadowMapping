@@ -59,12 +59,12 @@ void RendererGL::initialize()
 
    const std::string shader_directory_path = std::string(CMAKE_SOURCE_DIR) + "/shaders";
    ObjectShader->setShader(
-      std::string(shader_directory_path + "/BasicPipeline.vert").c_str(),
-      std::string(shader_directory_path + "/BasicPipeline.frag").c_str()
+      std::string(shader_directory_path + "/light_view_generator.vert").c_str(),
+      std::string(shader_directory_path + "/light_view_generator.frag").c_str()
    );
    ShadowShader->setShader(
-      std::string(shader_directory_path + "/Shadow.vert").c_str(),
-      std::string(shader_directory_path + "/Shadow.frag").c_str()
+      std::string(shader_directory_path + "/scene_shader.vert").c_str(),
+      std::string(shader_directory_path + "/scene_shader.frag").c_str()
    );
 }
 
