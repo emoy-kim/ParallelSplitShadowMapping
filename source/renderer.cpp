@@ -426,7 +426,7 @@ void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const
 
 void RendererGL::render() const
 {
-   glClear( OPENGL_COLOR_BUFFER_BIT | OPENGL_DEPTH_BUFFER_BIT );
+   glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
    LightCamera->updateCameraView(
       glm::vec3(Lights->getLightPosition( ActiveLightIndex )),

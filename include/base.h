@@ -27,7 +27,3 @@
 
 using uchar = unsigned char;
 using uint = unsigned int;
-
-constexpr uint OPENGL_COLOR_BUFFER_BIT = 0x00004000u;
-constexpr uint OPENGL_DEPTH_BUFFER_BIT = 0x00000100u;
-constexpr uint OPENGL_STENCIL_BUFFER_BIT = 0x00000400u;
