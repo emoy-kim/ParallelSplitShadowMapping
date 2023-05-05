@@ -39,7 +39,6 @@ void RendererGL::initialize()
    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
    glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
-   glfwWindowHint( GLFW_DEPTH_BITS, 32 );
    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
    Window = glfwCreateWindow( FrameWidth, FrameHeight, "Main Camera", nullptr, nullptr );
@@ -209,7 +208,7 @@ void RendererGL::splitViewFrustum()
 
 void RendererGL::setLights() const
 {
-   const glm::vec4 light_position(300.0f, 300.0f, 300.0f, 0.0f);
+   const glm::vec4 light_position(500.0f, 500.0f, 500.0f, 0.0f);
    const glm::vec4 ambient_color(1.0f, 1.0f, 1.0f, 1.0f);
    const glm::vec4 diffuse_color(0.9f, 0.9f, 0.9f, 1.0f);
    const glm::vec4 specular_color(0.9f, 0.9f, 0.9f, 1.0f);
@@ -431,7 +430,7 @@ void RendererGL::render() const
 
    LightCamera->updateCameraView(
       glm::vec3(Lights->getLightPosition( ActiveLightIndex )),
-      glm::vec3(-100.0f, -100.0f, 0.0f),
+      glm::vec3(-1.0f, -1.0f, 0.0f),
       glm::vec3(0.0f, 1.0f, 0.0f)
    );
 
