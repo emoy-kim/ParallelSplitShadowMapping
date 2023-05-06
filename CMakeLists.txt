@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(
 	SOURCE_FILES 
 		main.cpp
+		source/text.cpp
 		source/light.cpp
 		source/camera.cpp
 		source/object.cpp

@@ -6,4 +6,5 @@ target_link_libraries(
         dl
         X11
         freeimage
+        freetype
 )
