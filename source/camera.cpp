@@ -119,6 +119,19 @@ void CameraGL::resetCamera()
    ProjectionMatrix = glm::perspective( glm::radians( InitFOV ), AspectRatio, NearPlane, FarPlane );
 }
 
+void CameraGL::update2DCamera(int width, int height)
+{
+   Width = width;
+   Height = height;
+   IsPerspective = false;
+   ViewMatrix = glm::mat4(1.0f);
+   ProjectionMatrix = glm::ortho(
+      0.0f, static_cast<float>(width),
+      0.0f, static_cast<float>(height),
+      -1.0f, 1.0f
+   );
+}
+
 void CameraGL::updateOrthographicCamera(int width, int height)
 {
    Width = width;

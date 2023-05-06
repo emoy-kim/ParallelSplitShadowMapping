@@ -2,7 +2,7 @@
 
 #include "shader.h"
 
-class ObjectGL
+class ObjectGL final
 {
 public:
    enum LayoutLocation { VertexLoc = 0, NormalLoc, TextureLoc };

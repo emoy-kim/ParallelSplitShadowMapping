@@ -12,6 +12,7 @@
 #include <gtx/quaternion.hpp>
 
 #include <FreeImage.h>
+#include <freetype/ftstroke.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -21,6 +22,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 #include <chrono>
 
 #include "project_constants.h"

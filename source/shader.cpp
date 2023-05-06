@@ -119,12 +119,20 @@ void ShaderGL::setBasicTransformationUniforms()
    Location.ModelViewProjection = glGetUniformLocation( ShaderProgram, "ModelViewProjectionMatrix" );
 }
 
-void ShaderGL::setBasicUniformLocations()
+void ShaderGL::setTextUniformLocations()
 {
    setBasicTransformationUniforms();
+   addUniformLocation( "TextScale" );
+   Location.Texture[0] = glGetUniformLocation( ShaderProgram, "BaseTexture" );
 }
 
-void ShaderGL::setUniformLocations(int light_num)
+void ShaderGL::setLightViewUniformLocations()
+{
+   setBasicTransformationUniforms();
+   addUniformLocation( "LightCropMatrix" );
+}
+
+void ShaderGL::setSceneUniformLocations(int light_num)
 {
    setBasicTransformationUniforms();
 
@@ -135,7 +143,6 @@ void ShaderGL::setUniformLocations(int light_num)
    Location.MaterialSpecularExponent = glGetUniformLocation( ShaderProgram, "Material.SpecularExponent" );
 
    Location.Texture[0] = glGetUniformLocation( ShaderProgram, "BaseTexture" );
-   Location.UseTexture = glGetUniformLocation( ShaderProgram, "UseTexture" );
 
    Location.UseLight = glGetUniformLocation( ShaderProgram, "UseLight" );
    Location.LightNum = glGetUniformLocation( ShaderProgram, "LightNum" );
@@ -153,9 +160,13 @@ void ShaderGL::setUniformLocations(int light_num)
       Location.Lights[i].SpotlightCutoffAngle = glGetUniformLocation( ShaderProgram, std::string("Lights[" + std::to_string( i ) + "].SpotlightCutoffAngle").c_str() );
       Location.Lights[i].LightAttenuationFactors = glGetUniformLocation( ShaderProgram, std::string("Lights[" + std::to_string( i ) + "].AttenuationFactors").c_str() );
    }
+
+   addUniformLocation( "UseTexture" );
+   addUniformLocation( "LightIndex" );
+   addUniformLocation( "LightModelViewProjectionMatrix" );
 }
 
-void ShaderGL::transferBasicTransformationUniforms(const glm::mat4& to_world, const CameraGL* camera, bool use_texture) const
+void ShaderGL::transferBasicTransformationUniforms(const glm::mat4& to_world, const CameraGL* camera) const
 {
    const glm::mat4 view = camera->getViewMatrix();
    const glm::mat4 projection = camera->getProjectionMatrix();
@@ -168,5 +179,4 @@ void ShaderGL::transferBasicTransformationUniforms(const glm::mat4& to_world, co
    for (const auto& texture : Location.Texture) {
       glUniform1i( texture.second, texture.first );
    }
-   glUniform1i( Location.UseTexture, use_texture ? 1 : 0 );
 }

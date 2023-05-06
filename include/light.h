@@ -2,7 +2,7 @@
 
 #include "shader.h"
 
-class LightGL
+class LightGL final
 {
 public:
    LightGL();

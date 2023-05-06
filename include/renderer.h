@@ -10,10 +10,10 @@
 #pragma once
 
 #include "base.h"
+#include "text.h"
 #include "light.h"
-#include "object.h"
 
-class RendererGL
+class RendererGL final
 {
 public:
    RendererGL();
@@ -29,6 +29,7 @@ public:
 private:
    inline static RendererGL* Renderer = nullptr;
    GLFWwindow* Window;
+   bool Pause;
    int FrameWidth;
    int FrameHeight;
    int ShadowMapSize;
@@ -37,10 +38,13 @@ private:
    GLuint FBO;
    GLuint DepthTextureID;
    glm::ivec2 ClickedPoint;
+   std::unique_ptr<TextGL> Texter;
    std::unique_ptr<CameraGL> MainCamera;
+   std::unique_ptr<CameraGL> TextCamera;
    std::unique_ptr<CameraGL> LightCamera;
-   std::unique_ptr<ShaderGL> ObjectShader;
-   std::unique_ptr<ShaderGL> ShadowShader;
+   std::unique_ptr<ShaderGL> TextShader;
+   std::unique_ptr<ShaderGL> SceneShader;
+   std::unique_ptr<ShaderGL> LightViewShader;
    std::unique_ptr<ObjectGL> WallObject;
    std::unique_ptr<ObjectGL> BunnyObject;
    std::unique_ptr<LightGL> Lights;
@@ -58,7 +62,6 @@ private:
    static void cursor(GLFWwindow* window, double xpos, double ypos);
    static void mouse(GLFWwindow* window, int button, int action, int mods);
    static void mousewheel(GLFWwindow* window, double xoffset, double yoffset);
-   static void reshape(GLFWwindow* window, int width, int height);
 
    void splitViewFrustum();
    void setLights() const;
@@ -73,5 +76,6 @@ private:
    void drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const;
    void drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) const;
    void drawShadow(const glm::mat4& light_crop_matrix) const;
+   void drawText(const std::string& text) const;
    void render() const;
 };

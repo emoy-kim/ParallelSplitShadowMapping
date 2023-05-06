@@ -1,12 +1,13 @@
 #include "renderer.h"
 
 RendererGL::RendererGL() :
-   Window( nullptr ), FrameWidth( 1920 ), FrameHeight( 1080 ), ShadowMapSize( 1024 ), SplitNum( 4 ),
+   Window( nullptr ), Pause( false ), FrameWidth( 1920 ), FrameHeight( 1080 ), ShadowMapSize( 1024 ), SplitNum( 4 ),
    ActiveLightIndex( 0 ), FBO( 0 ), DepthTextureID( 0 ), ClickedPoint( -1, -1 ),
-   MainCamera( std::make_unique<CameraGL>() ), LightCamera( std::make_unique<CameraGL>() ),
-   ObjectShader( std::make_unique<ShaderGL>() ), ShadowShader( std::make_unique<ShaderGL>() ),
-   WallObject( std::make_unique<ObjectGL>() ), BunnyObject( std::make_unique<ObjectGL>() ),
-   Lights( std::make_unique<LightGL>() )
+   Texter( std::make_unique<TextGL>() ), MainCamera( std::make_unique<CameraGL>() ),
+   TextCamera( std::make_unique<CameraGL>() ), LightCamera( std::make_unique<CameraGL>() ),
+   TextShader( std::make_unique<ShaderGL>() ), SceneShader( std::make_unique<ShaderGL>() ),
+   LightViewShader( std::make_unique<ShaderGL>() ), WallObject( std::make_unique<ObjectGL>() ),
+   BunnyObject( std::make_unique<ObjectGL>() ), Lights( std::make_unique<LightGL>() )
 {
    Renderer = this;
 
@@ -39,6 +40,7 @@ void RendererGL::initialize()
    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 6 );
    glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
+   glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
    Window = glfwCreateWindow( FrameWidth, FrameHeight, "Main Camera", nullptr, nullptr );
@@ -54,17 +56,24 @@ void RendererGL::initialize()
    glEnable( GL_DEPTH_TEST );
    glClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
 
+   Texter->initialize();
+
+   TextCamera->update2DCamera( FrameWidth, FrameHeight );
    MainCamera->updatePerspectiveCamera( FrameWidth, FrameHeight );
    LightCamera->updateOrthographicCamera( ShadowMapSize, ShadowMapSize );
 
    const std::string shader_directory_path = std::string(CMAKE_SOURCE_DIR) + "/shaders";
-   ObjectShader->setShader(
-      std::string(shader_directory_path + "/light_view_generator.vert").c_str(),
-      std::string(shader_directory_path + "/light_view_generator.frag").c_str()
+   TextShader->setShader(
+      std::string(shader_directory_path + "/text.vert").c_str(),
+      std::string(shader_directory_path + "/text.frag").c_str()
    );
-   ShadowShader->setShader(
+   SceneShader->setShader(
       std::string(shader_directory_path + "/scene_shader.vert").c_str(),
       std::string(shader_directory_path + "/scene_shader.frag").c_str()
+   );
+   LightViewShader->setShader(
+      std::string(shader_directory_path + "/light_view_generator.vert").c_str(),
+      std::string(shader_directory_path + "/light_view_generator.frag").c_str()
    );
 }
 
@@ -126,6 +135,9 @@ void RendererGL::keyboard(GLFWwindow* window, int key, int scancode, int action,
          const glm::vec3 pos = Renderer->MainCamera->getCameraPosition();
          std::cout << "Camera Position: " << pos.x << ", " << pos.y << ", " << pos.z << "\n";
       } break;
+      case GLFW_KEY_SPACE:
+         Renderer->Pause = !Renderer->Pause;
+         break;
       case GLFW_KEY_Q:
       case GLFW_KEY_ESCAPE:
          cleanup( window );
@@ -137,6 +149,8 @@ void RendererGL::keyboard(GLFWwindow* window, int key, int scancode, int action,
 
 void RendererGL::cursor(GLFWwindow* window, double xpos, double ypos)
 {
+   if (Renderer->Pause) return;
+
    if (Renderer->MainCamera->getMovingState()) {
       const auto x = static_cast<int>(std::round( xpos ));
       const auto y = static_cast<int>(std::round( ypos ));
@@ -156,6 +170,8 @@ void RendererGL::cursor(GLFWwindow* window, double xpos, double ypos)
 
 void RendererGL::mouse(GLFWwindow* window, int button, int action, int mods)
 {
+   if (Renderer->Pause) return;
+
    if (button == GLFW_MOUSE_BUTTON_LEFT) {
       const bool moving_state = action == GLFW_PRESS;
       if (moving_state) {
@@ -170,14 +186,10 @@ void RendererGL::mouse(GLFWwindow* window, int button, int action, int mods)
 
 void RendererGL::mousewheel(GLFWwindow* window, double xoffset, double yoffset)
 {
+   if (Renderer->Pause) return;
+
    if (yoffset >= 0.0) Renderer->MainCamera->zoomIn();
    else Renderer->MainCamera->zoomOut();
-}
-
-void RendererGL::reshape(GLFWwindow* window, int width, int height)
-{
-   Renderer->MainCamera->updatePerspectiveCamera( width, height );
-   glViewport( 0, 0, width, height );
 }
 
 void RendererGL::registerCallbacks() const
@@ -187,7 +199,6 @@ void RendererGL::registerCallbacks() const
    glfwSetCursorPosCallback( Window, cursor );
    glfwSetMouseButtonCallback( Window, mouse );
    glfwSetScrollCallback( Window, mousewheel );
-   glfwSetFramebufferSizeCallback( Window, reshape );
 }
 
 void RendererGL::splitViewFrustum()
@@ -355,7 +366,7 @@ glm::mat4 RendererGL::calculateLightCropMatrix(std::array<glm::vec3, 8>& boundin
 void RendererGL::drawBoxObject(ShaderGL* shader, const CameraGL* camera) const
 {
    glm::mat4 to_world(1.0f);
-   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   shader->transferBasicTransformationUniforms( to_world, camera );
    WallObject->setDiffuseReflectionColor( { 0.0f, 0.0f, 1.0f, 1.0f } );
    WallObject->transferUniformsToShader( shader );
    glBindVertexArray( WallObject->getVAO() );
@@ -364,7 +375,7 @@ void RendererGL::drawBoxObject(ShaderGL* shader, const CameraGL* camera) const
    to_world =
       glm::translate( glm::mat4(1.0f), glm::vec3(0.0f, 128.0f, -128.0f) ) *
       glm::rotate( glm::mat4(1.0f), glm::radians( 90.0f ), glm::vec3(1.0f, 0.0f, 0.0f) );
-   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   shader->transferBasicTransformationUniforms( to_world, camera );
    WallObject->setDiffuseReflectionColor( { 0.0f, 1.0f, 0.0f, 1.0f } );
    WallObject->transferUniformsToShader( shader );
    glDrawArrays( WallObject->getDrawMode(), 0, WallObject->getVertexNum() );
@@ -372,7 +383,7 @@ void RendererGL::drawBoxObject(ShaderGL* shader, const CameraGL* camera) const
    to_world =
       glm::translate( glm::mat4(1.0f), glm::vec3(-128.0f, 128.0f, 0.0f) ) *
       glm::rotate( glm::mat4(1.0f), glm::radians( -90.0f ), glm::vec3(0.0f, 0.0f, 1.0f) );
-   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   shader->transferBasicTransformationUniforms( to_world, camera );
    WallObject->setDiffuseReflectionColor( { 1.0f, 0.0f, 0.0f, 1.0f } );
    WallObject->transferUniformsToShader( shader );
    glDrawArrays( WallObject->getDrawMode(), 0, WallObject->getVertexNum() );
@@ -383,7 +394,7 @@ void RendererGL::drawBunnyObject(ShaderGL* shader, const CameraGL* camera) const
    const glm::mat4 to_world =
       glm::translate( glm::mat4(1.0f), glm::vec3(0.0f, 10.0f, -30.0f) ) *
       glm::scale( glm::mat4(1.0f), glm::vec3(100.0f, 100.0f, 100.0f) );
-   shader->transferBasicTransformationUniforms( to_world, camera, false );
+   shader->transferBasicTransformationUniforms( to_world, camera );
    BunnyObject->transferUniformsToShader( shader );
 
    glBindVertexArray( BunnyObject->getVAO() );
@@ -399,11 +410,11 @@ void RendererGL::drawDepthMapFromLightView(const glm::mat4& light_crop_matrix) c
    glClearNamedFramebufferfv( FBO, GL_DEPTH, 0, &one );
    glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-   glUseProgram( ObjectShader->getShaderProgram() );
-   glUniformMatrix4fv( ObjectShader->getLocation( "LightCropMatrix" ), 1, GL_FALSE, &light_crop_matrix[0][0] );
+   glUseProgram( LightViewShader->getShaderProgram() );
+   glUniformMatrix4fv( LightViewShader->getLocation( "LightCropMatrix" ), 1, GL_FALSE, &light_crop_matrix[0][0] );
 
-   drawBunnyObject( ObjectShader.get(), LightCamera.get() );
-   drawBoxObject( ObjectShader.get(), LightCamera.get() );
+   drawBunnyObject( LightViewShader.get(), LightCamera.get() );
+   drawBoxObject( LightViewShader.get(), LightCamera.get() );
 }
 
 void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const
@@ -411,17 +422,54 @@ void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const
    glViewport( 0, 0, FrameWidth, FrameHeight );
    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
    glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-   glUseProgram( ShadowShader->getShaderProgram() );
+   glUseProgram( SceneShader->getShaderProgram() );
 
-   Lights->transferUniformsToShader( ShadowShader.get() );
-   glUniform1i( ShadowShader->getLocation( "LightIndex" ), ActiveLightIndex );
+   Lights->transferUniformsToShader( SceneShader.get() );
+   glUniform1i( SceneShader->getLocation( "LightIndex" ), ActiveLightIndex );
+   glUniform1i( SceneShader->getLocation( "UseTexture" ), 0 );
 
    const glm::mat4 model_view_projection = light_crop_matrix * LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
-   glUniformMatrix4fv( ShadowShader->getLocation( "LightModelViewProjectionMatrix" ), 1, GL_FALSE, &model_view_projection[0][0] );
+   glUniformMatrix4fv( SceneShader->getLocation( "LightModelViewProjectionMatrix" ), 1, GL_FALSE, &model_view_projection[0][0] );
 
    glBindTextureUnit( 1, DepthTextureID );
-   drawBunnyObject( ShadowShader.get(), MainCamera.get() );
-   drawBoxObject( ShadowShader.get(), MainCamera.get() );
+   drawBunnyObject( SceneShader.get(), MainCamera.get() );
+   drawBoxObject( SceneShader.get(), MainCamera.get() );
+}
+
+void RendererGL::drawText(const std::string& text) const
+{
+   std::vector<TextGL::Glyph*> glyphs;
+   Texter->getGlyphsFromText( glyphs, text );
+
+   glViewport( 0, 0, FrameWidth, FrameHeight );
+   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+   glUseProgram( TextShader->getShaderProgram() );
+
+   glEnable( GL_BLEND );
+   glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+   glDisable( GL_DEPTH_TEST );
+
+   glm::vec2 text_position(50.0f, 1000.0f);
+   const ObjectGL* glyph_object = Texter->getGlyphObject();
+   glBindVertexArray( glyph_object->getVAO() );
+   for (const auto& glyph : glyphs) {
+      const glm::vec2 position(
+         std::round( text_position.x + glyph->Bearing.x ),
+         std::round( text_position.y + glyph->Bearing.y - glyph->Size.y )
+      );
+      const glm::mat4 to_world =
+         glm::translate( glm::mat4(1.0f), glm::vec3(position, 0.0f) ) *
+         glm::scale( glm::mat4(1.0f), glm::vec3(glyph->Size.x, glyph->Size.y, 1.0f) );
+      TextShader->transferBasicTransformationUniforms( to_world, TextCamera.get() );
+      TextShader->uniform2fv( "TextScale", glyph->TopRightTextureCoord );
+      glBindTextureUnit( 0, glyph_object->getTextureID( glyph->TextureIDIndex ) );
+      glDrawArrays( glyph_object->getDrawMode(), 0, glyph_object->getVertexNum() );
+
+      text_position.x += glyph->Advance.x;
+      text_position.y -= glyph->Advance.y;
+   }
+   glEnable( GL_DEPTH_TEST );
+   glDisable( GL_BLEND );
 }
 
 void RendererGL::render() const
@@ -433,6 +481,8 @@ void RendererGL::render() const
       glm::vec3(-1.0f, -1.0f, 0.0f),
       glm::vec3(0.0f, 1.0f, 0.0f)
    );
+
+   std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
    const float original_n = MainCamera->getNearPlane();
    const float original_f = MainCamera->getFarPlane();
@@ -459,6 +509,12 @@ void RendererGL::render() const
       glDepthRange( 0.0f, 1.0f );
       MainCamera->updateNearFarPlanes( original_n, original_f );
    }
+
+   std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+   const auto fps = 1E+6 / static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+   std::stringstream text;
+   text << std::fixed << std::setprecision( 2 ) << fps << " fps";
+   drawText( text.str() );
 }
 
 void RendererGL::play()
@@ -471,15 +527,12 @@ void RendererGL::play()
    setBunnyObject();
    setDepthFrameBuffer();
 
-   ObjectShader->setBasicUniformLocations();
-   ObjectShader->addUniformLocation( "LightCropMatrix" );
-
-   ShadowShader->setUniformLocations( 1 );
-   ShadowShader->addUniformLocation( "LightIndex" );
-   ShadowShader->addUniformLocation( "LightModelViewProjectionMatrix" );
+   TextShader->setTextUniformLocations();
+   SceneShader->setSceneUniformLocations( 1 );
+   LightViewShader->setLightViewUniformLocations();
 
    while (!glfwWindowShouldClose( Window )) {
-      render();
+      if (!Pause) render();
 
       glfwSwapBuffers( Window );
       glfwPollEvents();

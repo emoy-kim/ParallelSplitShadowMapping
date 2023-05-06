@@ -2,7 +2,7 @@
 
 #include "base.h"
 
-class CameraGL
+class CameraGL final
 {
 public:
    CameraGL();
@@ -14,6 +14,7 @@ public:
       float near_plane = 1.0f,
       float far_plane = 5000.0f
    );
+   ~CameraGL() = default;
 
    [[nodiscard]] bool getMovingState() const { return IsMoving; }
    [[nodiscard]] float getFOV() const { return FOV; }
@@ -40,6 +41,7 @@ public:
    void zoomIn();
    void zoomOut();
    void resetCamera();
+   void update2DCamera(int width, int height);
    void updateOrthographicCamera(int width, int height);
    void updatePerspectiveCamera(int width, int height);
    void updateCameraView(
