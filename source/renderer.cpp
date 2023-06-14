@@ -428,8 +428,8 @@ void RendererGL::drawShadow(const glm::mat4& light_crop_matrix) const
    glUniform1i( SceneShader->getLocation( "LightIndex" ), ActiveLightIndex );
    glUniform1i( SceneShader->getLocation( "UseTexture" ), 0 );
 
-   const glm::mat4 model_view_projection = light_crop_matrix * LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
-   glUniformMatrix4fv( SceneShader->getLocation( "LightModelViewProjectionMatrix" ), 1, GL_FALSE, &model_view_projection[0][0] );
+   const glm::mat4 view_projection = light_crop_matrix * LightCamera->getProjectionMatrix() * LightCamera->getViewMatrix();
+   glUniformMatrix4fv( SceneShader->getLocation( "LightViewProjectionMatrix" ), 1, GL_FALSE, &view_projection[0][0] );
 
    glBindTextureUnit( 1, DepthTextureID );
    drawBunnyObject( SceneShader.get(), MainCamera.get() );
