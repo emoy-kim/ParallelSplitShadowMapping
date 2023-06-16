@@ -211,7 +211,7 @@ void RendererGL::splitViewFrustum()
    SplitPositions[SplitNum] = f;
    for (int i = 1; i < SplitNum; ++i) {
       const auto r = static_cast<float>(i) / static_cast<float>(SplitNum);
-      const float logarithmic_split = n * std::pow( f / n, r * 0.5f );
+      const float logarithmic_split = n * std::pow( f / n, r );
       const float uniform_split = n + (f - n) * r;
       SplitPositions[i] = glm::mix( uniform_split, logarithmic_split, split_weight );
    }
