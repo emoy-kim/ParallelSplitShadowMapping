@@ -282,10 +282,6 @@ void RendererGL::setDepthFrameBuffer()
 
 void RendererGL::getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, float far) const
 {
-   const glm::vec3 n = glm::normalize( MainCamera->getInitialReferencePosition() - MainCamera->getInitialCameraPosition() );
-   const glm::vec3 u = glm::normalize( glm::cross( MainCamera->getInitialUpVector(), n ) );
-   const glm::vec3 v = glm::normalize( glm::cross( n, u ) );
-
    const glm::mat4& projection_matrix = MainCamera->getProjectionMatrix();
    const float scale_x = 1.0f / projection_matrix[0][0];
    const float scale_y = 1.0f / projection_matrix[1][1];
@@ -294,8 +290,13 @@ void RendererGL::getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, 
    const float far_plane_half_width = far * scale_x;
    const float far_plane_half_height = far * scale_y;
 
-   const glm::vec3 near_plane_center = MainCamera->getInitialCameraPosition() + n * near;
-   const glm::vec3 far_plane_center = MainCamera->getInitialCameraPosition() + n * far;
+#if 0
+   const glm::vec3 n = glm::normalize( MainCamera->getInitialCameraPosition() - MainCamera->getInitialReferencePosition() );
+   const glm::vec3 u = glm::normalize( glm::cross( MainCamera->getInitialUpVector(), n ) );
+   const glm::vec3 v = glm::normalize( glm::cross( n, u ) );
+
+   const glm::vec3 near_plane_center = MainCamera->getInitialCameraPosition() + n * (-near);
+   const glm::vec3 far_plane_center = MainCamera->getInitialCameraPosition() + n * (-far);
 
    frustum[0] = glm::vec3(near_plane_center - u * near_plane_half_width - v * near_plane_half_height);
    frustum[1] = glm::vec3(near_plane_center - u * near_plane_half_width + v * near_plane_half_height);
@@ -306,6 +307,22 @@ void RendererGL::getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, 
    frustum[5] = glm::vec3(far_plane_center - u * far_plane_half_width + v * far_plane_half_height);
    frustum[6] = glm::vec3(far_plane_center + u * far_plane_half_width + v * far_plane_half_height);
    frustum[7] = glm::vec3(far_plane_center + u * far_plane_half_width - v * far_plane_half_height);
+#else
+   frustum[0] = glm::vec3(-near_plane_half_width, -near_plane_half_height, -near);
+   frustum[1] = glm::vec3(-near_plane_half_width, near_plane_half_height, -near);
+   frustum[2] = glm::vec3(near_plane_half_width, near_plane_half_height, -near);
+   frustum[3] = glm::vec3(near_plane_half_width, -near_plane_half_height, -near);
+
+   frustum[4] = glm::vec3(-far_plane_half_width, -far_plane_half_height, -far);
+   frustum[5] = glm::vec3(-far_plane_half_width, far_plane_half_height, -far);
+   frustum[6] = glm::vec3(far_plane_half_width, far_plane_half_height, -far);
+   frustum[7] = glm::vec3(far_plane_half_width, -far_plane_half_height, -far);
+
+   const glm::mat4 inverse_view_matrix = glm::inverse( MainCamera->getViewMatrix() );
+   for (int i = 0; i < 8; ++i) {
+      frustum[i] = glm::vec3(inverse_view_matrix * glm::vec4(frustum[i], 1.0f));
+   }
+#endif
 }
 
 void RendererGL::getBoundingBox(std::array<glm::vec3, 8>& bounding_box, const std::array<glm::vec3, 8>& points)
