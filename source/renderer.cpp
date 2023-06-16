@@ -286,10 +286,13 @@ void RendererGL::getSplitFrustum(std::array<glm::vec3, 8>& frustum, float near, 
    const glm::vec3 u = glm::normalize( glm::cross( MainCamera->getInitialUpVector(), n ) );
    const glm::vec3 v = glm::normalize( glm::cross( n, u ) );
 
-   const float near_plane_half_height = std::tan( MainCamera->getFOV() * 0.5f ) * near;
-   const float near_plane_half_width = near_plane_half_height * MainCamera->getAspectRatio();
-   const float far_plane_half_height = std::tan( MainCamera->getFOV() * 0.5f ) * far;
-   const float far_plane_half_width = far_plane_half_height * MainCamera->getAspectRatio();
+   const glm::mat4& projection_matrix = MainCamera->getProjectionMatrix();
+   const float scale_x = 1.0f / projection_matrix[0][0];
+   const float scale_y = 1.0f / projection_matrix[1][1];
+   const float near_plane_half_width = near * scale_x;
+   const float near_plane_half_height = near * scale_y;
+   const float far_plane_half_width = far * scale_x;
+   const float far_plane_half_height = far * scale_y;
 
    const glm::vec3 near_plane_center = MainCamera->getInitialCameraPosition() + n * near;
    const glm::vec3 far_plane_center = MainCamera->getInitialCameraPosition() + n * far;
